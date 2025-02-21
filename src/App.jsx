@@ -1,82 +1,118 @@
 import { createContext, useContext, useState } from 'react';
 import './App.css';
 
-const favoriteCards = createContext()
+const ticketsContext = createContext()
 
-function Card({ index }) {
 
-  const favoriteObject = useContext(favoriteCards)
 
-  const appendObject = () => {
-    const array = [...favoriteObject.list, index];
-    console.log(array);
-    favoriteObject.command(array);
 
-  }
+function Place({ children }) {
 
-  return (
-    <div className='Card'>
-      <p>Карточка №{index}</p>
-      <button onClick={() => appendObject()}>В избранное</button>
-    </div>
-  )
+    const [isBook, setIsBook] = useState(false);
+
+    const ticketsObj = useContext(ticketsContext);
+
+    const handler = () => {
+        if (!isBook) {
+            const newTickets = [...ticketsObj.value, children]
+            ticketsObj.setter(newTickets)
+        }
+        else {
+            if (ticketsObj.value.includes(children)) {
+                const index = ticketsObj.value.indexOf(children);
+                const newTickets = [...ticketsObj.value];
+                newTickets.splice(index, 1)
+                ticketsObj.setter(newTickets)
+            }
+        }
+        setIsBook(!isBook);
+    }
+
+
+    return (
+        <button onClick={() => { handler() }}
+            style={{
+                color: isBook ? "white" : "",
+                background: isBook ? "#1DE782" : "",
+
+            }}
+            className='Book'>
+            {children}
+        </button>
+    )
 }
 
-function CardList({ children }) {
+function BookPlaces({ row, col }) {
 
-  return (
-    <section className='CardList'>
-      <h2>Список карточек</h2>
-      <div>
-        {children}
-      </div>
-    </section>
-  )
-}
+    const places = []
+    for (let i = 0; i < row; i++) {
+        for (let j = 0; j < col; j++) {
+            places.push(`${i + 1}-${j + 1}`)
+        }
+    }
 
-function FavoriteList({ children }) {
-  return (
-
-    <section className='FavoriteList'>
-      <h2>Избранное</h2>
-      <div>
-        {children}
-      </div>
-    </section>
-  )
+    return (
+        <section style={{ gridTemplateColumns: `repeat(${col},50px)` }} className='BookPlaces'>
+            {places.map((number) => <Place>{number}</Place>)}
+        </section>
+    )
 }
 
 
-function App() {
+function InfoBlock({ price }) {
 
-  const cardList = []
-  for (let i = 0; i < 20; i++) {
-    cardList.push(i);
-  }
+    const ticketsObj = useContext(ticketsContext);
 
-  const [favoriteList, setFavoriteList] = useState([])
-
-  const favoriteObject = {
-    "list": favoriteList,
-    "command": setFavoriteList
-  }
-
-  return (
-    <favoriteCards.Provider value={favoriteObject}>
-      <main>
-        <CardList>
-          {cardList.map((item, index) => <Card index={index}></Card>)}
-        </CardList>
-        <FavoriteList>
-
-          {favoriteList.length == 0 && <p>Пока ничего не добавлено</p>}
-          {favoriteList.length > 0 && favoriteList.map((item, index) => <p>{index}. {item}</p>)}
-        </FavoriteList>
-      </main>
-    </favoriteCards.Provider>
-  )
+    return (
+        <div className='InfoBlock'>
+            <div>
+                <h5>Сумма</h5>
+                <p>{ticketsObj.value.length * price} руб.</p>
+            </div>
+            <div>
+                <h5>Места</h5>
+                <p>{ticketsObj.value.join(", ")}</p>
+            </div>
+            <button>
+                Купить
+            </button>
+        </div>
+    )
 
 
 }
 
-export default App;
+
+
+function Book({ price, row, col }) {
+
+    return (
+        <>
+            <BookPlaces row={row} col={col} />
+            <InfoBlock price={price} />
+        </>
+    )
+
+}
+
+
+
+
+export default function App() {
+
+    const [tickets, setTickets] = useState([])
+    const ticketObj = {
+        value: tickets,
+        setter: setTickets
+    }
+
+    return (
+        <main>
+            <ticketsContext.Provider value={ticketObj}>
+                <Book price={700} row={10} col={15} />
+            </ticketsContext.Provider>
+        </main>
+    )
+}
+
+
